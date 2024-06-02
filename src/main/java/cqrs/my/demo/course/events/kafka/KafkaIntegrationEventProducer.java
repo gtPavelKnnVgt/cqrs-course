@@ -13,23 +13,23 @@ import java.util.Properties;
 @Slf4j
 public class KafkaIntegrationEventProducer {
     private final static String TOPIC_NAME = "INTEGRATION_EVENTS_APPOINTMENT_ADDED";
-    private static final ObjectMapper OBJECT_MAPPER = new ObjectMapper();
-
     private final Producer<String, String> producer;
+    private final ObjectMapper jacksonObjectMapper;
 
-    public KafkaIntegrationEventProducer() {
+    public KafkaIntegrationEventProducer(ObjectMapper jacksonObjectMapper) {
         Properties props = new Properties();
         props.put("bootstrap.servers", "localhost:9092");
         props.put("key.serializer", "org.apache.kafka.common.serialization.StringSerializer");
         props.put("value.serializer", "org.apache.kafka.common.serialization.StringSerializer");
 
         producer = new KafkaProducer<>(props);
+        this.jacksonObjectMapper = jacksonObjectMapper;
     }
 
     public void send(IntegrationEvent integrationEvent) {
         String resp;
         try {
-            resp = OBJECT_MAPPER.writeValueAsString(integrationEvent);
+            resp = jacksonObjectMapper.writeValueAsString(integrationEvent);
         } catch (Exception e) {
             log.error("Failed to serialize integration event: {}", integrationEvent, e.getMessage());
             return;
