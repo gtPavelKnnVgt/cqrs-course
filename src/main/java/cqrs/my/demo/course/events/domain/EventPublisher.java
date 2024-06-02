@@ -1,4 +1,4 @@
-package cqrs.my.demo.course.events;
+package cqrs.my.demo.course.events.domain;
 
 import org.springframework.stereotype.Component;
 

@@ -1,9 +1,11 @@
 package cqrs.my.demo.course.command;
 
 import cqrs.my.demo.course.db.tables.records.AppointmentRecord;
-import cqrs.my.demo.course.events.AppointmentCreatedDomainEvent;
-import cqrs.my.demo.course.events.AppointmentCreatedEventHandler;
-import cqrs.my.demo.course.events.EventPublisher;
+import cqrs.my.demo.course.events.domain.AppointmentCreatedDomainEvent;
+import cqrs.my.demo.course.events.domain.AppointmentCreatedEventHandler;
+import cqrs.my.demo.course.events.domain.EventPublisher;
+import cqrs.my.demo.course.events.kafka.AppointmentConfirmedIntegrationEvent;
+import cqrs.my.demo.course.events.kafka.KafkaIntegrationEventProducer;
 import lombok.RequiredArgsConstructor;
 import org.jooq.DSLContext;
 import org.springframework.stereotype.Service;
@@ -11,6 +13,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
 import java.util.UUID;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
+import java.util.concurrent.TimeUnit;
 
 import static cqrs.my.demo.course.db.Tables.*;
 
@@ -18,9 +23,12 @@ import static cqrs.my.demo.course.db.Tables.*;
 @Service
 @RequiredArgsConstructor
 public class DoctorService {
+    private static final String ADMINISTRATION_FIO = "Админ Админов";
+
     private final DSLContext ctx;
     private final EventPublisher eventPublisher;
     private final AppointmentCreatedEventHandler appointmentCreatedObserver;
+    private final KafkaIntegrationEventProducer kafkaProducer;
 
     @Transactional
     public AppointmentRecord createAppointment(long patientId, long doctorId, long timeSlotId) {
@@ -60,6 +68,14 @@ public class DoctorService {
                 timeSlot.getStartTime(),
                 timeSlot.getEndTime());
         eventPublisher.publish(event);
+
+        ScheduledExecutorService scheduler = Executors.newSingleThreadScheduledExecutor();
+        var integrationEvent = new AppointmentConfirmedIntegrationEvent(
+                UUID.randomUUID(),
+                Instant.now(),
+                ADMINISTRATION_FIO
+        );
+        scheduler.schedule(() -> kafkaProducer.send(integrationEvent), 10, TimeUnit.SECONDS);
 
         return appointment;
     }
