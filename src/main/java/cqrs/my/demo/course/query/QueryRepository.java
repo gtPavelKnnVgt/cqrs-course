@@ -9,7 +9,6 @@ import java.util.List;
 import static cqrs.my.demo.course.db.Tables.*;
 import static cqrs.my.demo.course.db.tables.Appointment.APPOINTMENT;
 import static cqrs.my.demo.course.db.tables.Doctor.DOCTOR;
-import static org.jooq.Records.mapping;
 import static org.jooq.impl.DSL.row;
 
 @Repository
@@ -19,25 +18,28 @@ class QueryRepository {
 
     List<Appointment> findAppointments(String doctorFirstName, String doctorLastName, int offset, int limit) {
         return ctx.select(APPOINTMENT.ID, APPOINTMENT.DAY_OF_WEEK,
-                        row(APPOINTMENT.patient().ID,
-                                APPOINTMENT.patient().FIRST_NAME,
-                                APPOINTMENT.patient().LAST_NAME,
-                                APPOINTMENT.patient().BIRTHDAY,
-                                APPOINTMENT.patient().MEDICAL_RECORD_NUMBER)
-                                .mapping(Patient::new),
-                        row(APPOINTMENT.doctor().ID,
-                                APPOINTMENT.doctor().FIRST_NAME,
-                                APPOINTMENT.doctor().LAST_NAME,
-                                APPOINTMENT.doctor().SPECIALIZATION,
-                                APPOINTMENT.doctor().LICENSE_NUMBER,
-                                row(APPOINTMENT.doctor().department().ID,
-                                        APPOINTMENT.doctor().department().NAME,
-                                        APPOINTMENT.doctor().department().DESCRIPTION).mapping(Department::new))
-                                .mapping(Doctor::new),
-                        row(APPOINTMENT.timeslot().ID,
-                                APPOINTMENT.timeslot().START_TIME,
-                                APPOINTMENT.timeslot().END_TIME)
-                                .mapping(TimeSlot::new))
+                        row(PATIENT.ID,
+                                PATIENT.FIRST_NAME,
+                                PATIENT.LAST_NAME,
+                                PATIENT.BIRTHDAY,
+                                PATIENT.MEDICAL_RECORD_NUMBER)
+                                .mapping(Patient::registerNewPatient).as("patient"),
+                        row(TIMESLOT.ID,
+                                TIMESLOT.START_TIME,
+                                TIMESLOT.END_TIME)
+                                .mapping(TimeSlot::new).as("time_slot"),
+                        row(DOCTOR.ID,
+                                DOCTOR.FIRST_NAME,
+                                DOCTOR.LAST_NAME,
+                                DOCTOR.SPECIALIZATION,
+                                DOCTOR.LICENSE_NUMBER,
+                                row(DEPARTMENT.ID,
+                                        DEPARTMENT.NAME,
+                                        DEPARTMENT.DESCRIPTION).mapping(Department::new),
+                                row(TIMESLOT.ID,
+                                        TIMESLOT.START_TIME,
+                                        TIMESLOT.END_TIME).mapping(TimeSlot::new))
+                                .mapping(Doctor::assignDoctorToDepartment).as("doctor"))
                 .from(APPOINTMENT)
                 .join(PATIENT).on(APPOINTMENT.patient().ID.eq(PATIENT.ID))
                 .join(DOCTOR).on(APPOINTMENT.doctor().ID.eq(DOCTOR.ID))
@@ -48,6 +50,6 @@ class QueryRepository {
                 .orderBy(TIMESLOT.START_TIME)
                 .offset(offset)
                 .limit(limit)
-                .fetch(mapping(Appointment::new));
+                .fetch(new AppointmentRecordMapper());
     }
 }

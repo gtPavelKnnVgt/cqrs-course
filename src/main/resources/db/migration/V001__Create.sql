@@ -7,6 +7,15 @@ CREATE TABLE department
     description varchar not null
 );
 
+CREATE SEQUENCE timeslot_seq start with 100000 increment by 50;
+
+CREATE TABLE timeslot
+(
+    id         bigint    not null default nextval('timeslot_seq') primary key,
+    start_time      timestamp not null,
+    end_time        timestamp not null
+);
+
 CREATE SEQUENCE doctor_seq start with 100000 increment by 50;
 
 CREATE TABLE doctor
@@ -16,7 +25,8 @@ CREATE TABLE doctor
     last_name      varchar not null,
     specialization varchar not null,
     license_number varchar not null,
-    department_id  bigint  not null references department (id)
+    department_id  bigint  not null references department (id),
+    timeslot_id  bigint  not null references timeslot (id)
 );
 
 CREATE SEQUENCE patient_seq start with 100000 increment by 50;
@@ -28,15 +38,6 @@ CREATE TABLE patient
     last_name             varchar   not null,
     birthday              date not null,
     medical_record_number varchar   not null
-);
-
-CREATE SEQUENCE timeslot_seq start with 100000 increment by 50;
-
-CREATE TABLE timeslot
-(
-    id         bigint    not null default nextval('timeslot_seq') primary key,
-    start_time      timestamp not null,
-    end_time        timestamp not null
 );
 
 CREATE SEQUENCE appointment_seq start with 100000 increment by 50;
