@@ -1,4 +1,4 @@
-public class Main {
+public class Consumer {
     private static final String TOPIC_NAME = "AUDIT_TOPIC";
     private static final Logger log = LoggerFactory.getLogger(Main.class);
 
