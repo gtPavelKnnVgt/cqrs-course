@@ -26,6 +26,7 @@ import static org.springframework.web.servlet.support.ServletUriComponentsBuilde
 public class CommandController {
     private final static String APPOINTMENT_ADDED_TOPIC_NAME = "INTEGRATION_EVENTS_APPOINTMENT_ADDED";
     private final static String DEPARTMENT_DISTRIBUTED_TOPIC_NAME = "INTEGRATION_EVENTS_DEPARTMENT_DISTRIBUTED";
+    private final static String AUDIT_TOPIC_NAME = "AUDIT_TOPIC";
     private static final String ADMINISTRATION_FIO = "Админ Админов";
 
     private final CommandHandler commandHandler;
@@ -48,7 +49,10 @@ public class CommandController {
                 String.valueOf(Instant.now().getEpochSecond()),
                 ADMINISTRATION_FIO
         );
-        scheduler.schedule(() -> kafkaProducer.send(integrationEvent, APPOINTMENT_ADDED_TOPIC_NAME), 10, TimeUnit.SECONDS);
+        scheduler.schedule(() -> {
+            kafkaProducer.send(integrationEvent, APPOINTMENT_ADDED_TOPIC_NAME);
+            kafkaProducer.send(integrationEvent, AUDIT_TOPIC_NAME);
+        }, 10, TimeUnit.SECONDS);
     }
 
     private void sendDepartmentDistributionAuditIntegrationEvent(long departmentId) {
